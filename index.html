@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Cadastro Nuvem</title>
+    <!-- Importação oficial do Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -123,6 +124,7 @@
 <body>
 
     <div class="container">
+        <!-- LADO ESQUERDO: FORMULÁRIO -->
         <div class="col-esquerda">
             <h2>Novo Cadastro</h2>
             <form id="cadastroForm">
@@ -152,6 +154,7 @@
             </form>
         </div>
 
+        <!-- LADO DIREITO: ÚLTIMOS CADASTROS -->
         <div class="col-direita">
             <h2>Últimos Cadastros (Nuvem)</h2>
             <ul id="listaCadastros" class="lista-cadastros"></ul>
@@ -160,29 +163,28 @@
 
     <script>
         // CONFIGURAÇÃO DO SEU BANCO DE DADOS
-        const SUPABASE_URL = "https://ugdjhenidlfphbsqjkbd.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_RbGjYGUtJTw2BMLwte8a4A_3O1NdBk3"; // Certifique-se de que esta chave está completa com mais de 100 caracteres se o erro persistir
+        const SUPABASE_URL = "https://ugdjhenidlfphbsqjkbd.supabase.co/rest/v1/";
+        const SUPABASE_KEY = "sb_publishable_RbGjYGUtJTw2BMLwte8a4A_3O1NdBk3"; 
         
-        // MUDAMOS AQUI: de 'supabase' para 'conexaoSupabase' para resolver o conflito de nomes
+        // Nome alterado para evitar conflito global da biblioteca (SyntaxError resolvido)
         const conexaoSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const form = document.getElementById('cadastroForm');
         const listaHTML = document.getElementById('listaCadastros');
         const btnCadastrar = document.getElementById('btnCadastrar');
 
-        // Função para buscar dados da Nuvem e exibir na tela
+        // Função para ir buscar os dados à Nuvem e exibir no ecrã
         async function atualizarLista() {
-            listaHTML.innerHTML = '<li class="sem-dados">Carregando dados da nuvem...</li>';
+            listaHTML.innerHTML = '<li class="sem-dados">A carregar dados da nuvem...</li>';
 
-            // Usando a nova variável conexaoSupabase
             const { data: cadastros, error } = await conexaoSupabase
                 .from('cadastros')
                 .select('*')
                 .order('id', { ascending: false });
 
             if (error) {
-                listaHTML.innerHTML = '<li class="sem-dados" style="color:red;">Erro ao carregar dados.</li>';
-                console.error(error);
+                listaHTML.innerHTML = '<li class="sem-dados" style="color:red;">Erro ao carregar dados do banco.</li>';
+                console.error("Erro Supabase (Select):", error);
                 return;
             }
 
@@ -202,25 +204,24 @@
             });
         }
 
-        // Evento de envio do formulário
+        // Evento de envio do formulário (Inserir no banco)
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
             
-            btnCadastrar.innerText = "Cadastrando...";
+            btnCadastrar.innerText = "A cadastrar...";
             btnCadastrar.disabled = true;
 
             const nome = document.getElementById('nome').value;
             const tamanho = document.getElementById('tamanho').value;
             const numero = parseInt(document.getElementById('numero').value);
 
-            // Usando a nova variável conexaoSupabase
             const { error } = await conexaoSupabase
                 .from('cadastros')
                 .insert([{ nome: nome, tamanho: tamanho, numero: numero }]);
 
             if (error) {
-                alert("Houve um erro ao salvar na nuvem!");
-                console.error(error);
+                alert("Erro ao guardar na nuvem! Verifique o console ou as políticas de RLS.");
+                console.error("Erro Supabase (Insert):", error);
             } else {
                 form.reset();
                 await atualizarLista(); 
@@ -230,7 +231,7 @@
             btnCadastrar.disabled = false;
         });
 
-        // Carrega a lista global assim que a página abre
+        // Executa a procura assim que a página abre
         atualizarLista();
     </script>
 </body>
