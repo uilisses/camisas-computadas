@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Cadastro</title>
+    <title>Sistema de Cadastro Nuvem</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -147,32 +148,53 @@
                     <input type="number" id="numero" required placeholder="Ex: 42">
                 </div>
 
-                <button type="submit">Cadastrar</button>
+                <button type="submit" id="btnCadastrar">Cadastrar</button>
             </form>
         </div>
 
         <div class="col-direita">
-            <h2>Últimos Cadastros</h2>
+            <h2>Últimos Cadastros (Nuvem)</h2>
             <ul id="listaCadastros" class="lista-cadastros"></ul>
         </div>
     </div>
 
     <script>
+        // CONFIGURAÇÃO DO SEU BANCO DE DADOS (Cole suas chaves aqui)
+        const SUPABASE_URL = "https://ugdjhenidlfphbsqjkbd.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_RbGjYGUtJTw2BMLwte8a4A_3O1NdBk3";
+        
+        // Inicializa a conexão com o Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const form = document.getElementById('cadastroForm');
         const listaHTML = document.getElementById('listaCadastros');
+        const btnCadastrar = document.getElementById('btnCadastrar');
 
-        let cadastros = JSON.parse(localStorage.getItem('meusCadastros')) || [];
+        // Função para buscar dados da Nuvem e exibir na tela
+        async function atualizarLista() {
+            listaHTML.innerHTML = '<li class="sem-dados">Carregando dados da nuvem...</li>';
 
-        function atualizarLista() {
+            // Busca os dados na tabela 'cadastros' ordenando pelo ID mais recente
+            const { data: cadastros, error } = await supabase
+                .from('cadastros')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                listaHTML.innerHTML = '<li class="sem-dados" style="color:red;">Erro ao carregar dados.</li>';
+                console.error(error);
+                return;
+            }
+
             listaHTML.innerHTML = '';
-            if (cadastros.length === 0) {
+            if (!cadastros || cadastros.length === 0) {
                 listaHTML.innerHTML = '<li class="sem-dados">Nenhum cadastro realizado ainda.</li>';
                 return;
             }
-            cadastros.slice().reverse().forEach(item => {
+
+            cadastros.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'item-cadastro';
-                // Usando concatenação tradicional para evitar problemas de escape no interpretador
                 li.innerHTML = '<strong>Nome:</strong> ' + item.nome + '<br>' +
                                '<strong>Tamanho:</strong> ' + item.tamanho + ' | ' +
                                '<strong>Número:</strong> ' + item.numero;
@@ -180,19 +202,35 @@
             });
         }
 
-        form.addEventListener('submit', function(event) {
+        // Evento de envio do formulário
+        form.addEventListener('submit', async function(event) {
             event.preventDefault();
-            const novoCadastro = {
-                nome: document.getElementById('nome').value,
-                tamanho: document.getElementById('tamanho').value,
-                numero: document.getElementById('numero').value
-            };
-            cadastros.push(novoCadastro);
-            localStorage.setItem('meusCadastros', JSON.stringify(cadastros));
-            atualizarLista();
-            form.reset();
+            
+            btnCadastrar.innerText = "Cadastrando...";
+            btnCadastrar.disabled = true;
+
+            const nome = document.getElementById('nome').value;
+            const tamanho = document.getElementById('tamanho').value;
+            const numero = parseInt(document.getElementById('numero').value);
+
+            // Envia os dados para a tabela do Supabase
+            const { error } = await supabase
+                .from('cadastros')
+                .insert([{ nome: nome, tamanho: tamanho, numero: numero }]);
+
+            if (error) {
+                alert("Houve um erro ao salvar na nuvem!");
+                console.error(error);
+            } else {
+                form.reset();
+                await atualizarLista(); // Atualiza a lista na hora para o usuário
+            }
+
+            btnCadastrar.innerText = "Cadastrar";
+            btnCadastrar.disabled = false;
         });
 
+        // Carrega a lista global assim que a página abre
         atualizarLista();
     </script>
 </body>
