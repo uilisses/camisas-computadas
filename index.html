@@ -159,12 +159,12 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO SEU BANCO DE DADOS (Cole suas chaves aqui)
+        // CONFIGURAÇÃO DO SEU BANCO DE DADOS
         const SUPABASE_URL = "https://ugdjhenidlfphbsqjkbd.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_RbGjYGUtJTw2BMLwte8a4A_3O1NdBk3";
+        const SUPABASE_KEY = "sb_publishable_RbGjYGUtJTw2BMLwte8a4A_3O1NdBk3"; // Certifique-se de que esta chave está completa com mais de 100 caracteres se o erro persistir
         
-        // Inicializa a conexão com o Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // MUDAMOS AQUI: de 'supabase' para 'conexaoSupabase' para resolver o conflito de nomes
+        const conexaoSupabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const form = document.getElementById('cadastroForm');
         const listaHTML = document.getElementById('listaCadastros');
@@ -174,8 +174,8 @@
         async function atualizarLista() {
             listaHTML.innerHTML = '<li class="sem-dados">Carregando dados da nuvem...</li>';
 
-            // Busca os dados na tabela 'cadastros' ordenando pelo ID mais recente
-            const { data: cadastros, error } = await supabase
+            // Usando a nova variável conexaoSupabase
+            const { data: cadastros, error } = await conexaoSupabase
                 .from('cadastros')
                 .select('*')
                 .order('id', { ascending: false });
@@ -213,8 +213,8 @@
             const tamanho = document.getElementById('tamanho').value;
             const numero = parseInt(document.getElementById('numero').value);
 
-            // Envia os dados para a tabela do Supabase
-            const { error } = await supabase
+            // Usando a nova variável conexaoSupabase
+            const { error } = await conexaoSupabase
                 .from('cadastros')
                 .insert([{ nome: nome, tamanho: tamanho, numero: numero }]);
 
@@ -223,7 +223,7 @@
                 console.error(error);
             } else {
                 form.reset();
-                await atualizarLista(); // Atualiza a lista na hora para o usuário
+                await atualizarLista(); 
             }
 
             btnCadastrar.innerText = "Cadastrar";
